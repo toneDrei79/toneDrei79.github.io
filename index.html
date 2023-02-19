@@ -1,36 +1,44 @@
 <!DOCTYPE html>
-<html>
 
-<head prefix='og: http://ogp.me/ns#'>
-  <meta charset='utf-8'>
-  <meta name='viewport' content='width=device-width,initial-scale=1'>
-  <meta property='og:type' content='website'>
-  <meta property='og:title' content='Chihiro Tone - Portfolio'>
-  <meta property='og:url' content='https://tonedrei79.github.io/'>
-  <meta property='og:description' content='Previous works on computer vision: Deep Learning, Three.js, etc...'>
-  <meta property='og:image' content='https://tonedrei79.github.io/img/summary.jpg'>
-  <meta name='description' content='Previous works on computer vision: Deep Learning, Three.js, etc...' />
-  <title>Chihiro Tone</title>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+
+            margin: 0;
+            overflow: hidden;
+            background-color: #aaaaaa;
+            background-attachment: fixed !important;
+
+            font-family: Monospace;
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
 </head>
 
 <body>
-  <!-- header -->
-  <header class='header'>
-    <div class='container'>
-      <h1 class='header-logo'>
-        <a href='.'>Chihiro Tone</a>
-      </h1>
-      <nav class='gnav'>
-        <ul class='gnav-list'>
-          <li class='gnav-item'><a href='#works'>Works</a></li>
-          <li class='gnav-item'><a href='#skill'>Skill</a></li>
-          <li class='gnav-item'><a href='#about'>About</a></li>
-          <li class='gnav-item'><a href='#contact'>Contact</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
-  <!-- /header -->
+    <div id="container"  width="200" height="200" ></div>
 </body>
+
+<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/"
+        }
+    }   
+</script>
+
+<script type="module" src="main.js"></script>
 
 </html>
