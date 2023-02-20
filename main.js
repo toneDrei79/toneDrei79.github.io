@@ -50,15 +50,15 @@ async function init() {
     window.addEventListener('resize', onWindowResize, false)
 
 
-    // histogram = new Histogram()
-    // const histogramMesh = histogram.mesh
-    // histogramMesh.position.y = -.3
-    // scene.add(histogramMesh)
+    histogram = new Histogram()
+    const histogramMesh = histogram.mesh
+    histogramMesh.position.y = -.3
+    scene.add(histogramMesh)
 
     particle = new Particle() // added to scene later
     
     const gui = new GUI({title: 'Settings'})
-    // guiHistogram(gui)
+    guiHistogram(gui)
     guiParticle(gui)
     gui.close()
 
@@ -73,7 +73,7 @@ async function init() {
 }
 
 function render() {
-    // histogram.compute(renderer)
+    histogram.compute(renderer)
 
     renderer.clear()
     renderer.render(scene, camera)
@@ -83,7 +83,7 @@ function render() {
 function animate() {
     requestAnimationFrame(animate)
 
-    // if (histogram.needsUpdate) histogram.loadCoordGeometry(video)
+    if (histogram.needsUpdate) histogram.loadCoordGeometry(video)
     if (particle.needsUpdate) {
         orbitScene.remove(orbitScene.getObjectByName('particle'))
 
@@ -122,8 +122,8 @@ function videoOnLoadedData() {
 
         scene.background = videoTexture
         
-        // histogram.loadCoordGeometry(video)
-        // histogram.setVideoTexture(videoTexture)
+        histogram.loadCoordGeometry(video)
+        histogram.setVideoTexture(videoTexture)
 
         particle.loadGeometry(video)
         particle.setVideoTexture(videoTexture)
