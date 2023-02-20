@@ -70,14 +70,16 @@ async function init() {
     _videoDevices.map((videoDevice) => availableDevices[videoDevice.label] = videoDevice.deviceId)
     
     // const constraints = {video: {width: 1920, height: 1080, facingMode: 'user'}}
-    constraints = {video: {width: 1920, height: 1080, deviceID: availableDevices[0]}}
+    constraints = {video: {width: 1920, height: 1080, deviceID: Object.values(availableDevices)[0]}}
     const userMedia = await navigator.mediaDevices.getUserMedia(constraints)
 
     video = document.createElement('video')
+    video.autoplay = true
+    video.muted = true
+    video.playsInline = true
     video.srcObject = userMedia
-    video.play()
-
     video.onloadeddata = videoOnLoadedData()
+    video.play()
 
     guiVideoCamera(gui)
 }
@@ -126,6 +128,7 @@ function guiVideoCamera(gui) {
     folder.add(constraints.video, 'deviceID', availableDevices).name('use').onChange(async(value) => {
         const userMedia = await navigator.mediaDevices.getUserMedia(constraints)
         video.srcObject = userMedia
+        video.onloadeddata = videoOnLoadedData()
         video.play()
     })
     folder.close()
