@@ -125,7 +125,7 @@ export default class Histogram {
     }
 
     get mesh() {
-        const geometry = new THREE.PlaneGeometry(.5, .5, 256, 100)
+        const geometry = new THREE.PlaneGeometry(.5, .3, 256, 100)
         return new THREE.Mesh(geometry, this.#graphMaterial)
     }
 
