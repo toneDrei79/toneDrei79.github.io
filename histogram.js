@@ -61,7 +61,7 @@ export default class Histogram {
         this.#needsUpdate = false
     }
 
-    compute(renderer, video) { // should be called in render function
+    compute(renderer) { // should be called in render function
         if (this.#coord) {
             this.#offscreanScene.remove(this.#coord)
             this.#coord.geometry.dispose()
