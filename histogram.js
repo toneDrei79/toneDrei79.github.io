@@ -78,6 +78,10 @@ export default class Histogram {
             renderer.render(this.#offscreanScene, this.#offscreanCamera)
         }
         renderer.setRenderTarget(null)
+
+        let mem = new Float32Array(1*256*4)
+        renderer.readRenderTargetPixels(this.#data, 0, 0, 256, 1, mem)
+        console.log(mem)
     }
 
     #initData() {
