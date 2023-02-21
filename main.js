@@ -53,7 +53,7 @@ async function init() {
 
     histogram = new Histogram()
     const histogramMesh = histogram.mesh
-    histogramMesh.position.y = -.3
+    histogramMesh.position.y = -.2
     scene.add(histogramMesh)
 
     particle = new Particle() // added to scene later
@@ -85,7 +85,7 @@ async function init() {
 }
 
 function render() {
-    histogram.compute(renderer)
+    histogram.compute(renderer, video)
 
     renderer.clear()
     renderer.render(scene, camera)

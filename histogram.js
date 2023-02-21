@@ -18,6 +18,7 @@ export default class Histogram {
     #offscreanCamera
 
     #shaderLoader
+    #a
 
     constructor() {
         this.#downsamplingRate = 8.
@@ -61,21 +62,22 @@ export default class Histogram {
         this.#needsUpdate = false
     }
 
-    compute(renderer) { // should be called in render function
+    compute(renderer, video) { // should be called in render function
         if (this.#coord) {
             this.#offscreanScene.remove(this.#coord)
             this.#coord.geometry.dispose()
         }
 
 
-        
-        const canvas = document.createElement('canvas')
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        const context = canvas.getContext('2d')
-        context.drawImage(this.#data.uniforms.tex.value, 0, 0)
-        const d = context.getImageData(0, 0, canvas.width, canvas.height).d
-        console.log(Math.max(...d))
+        if (this.#dataMaterial.uniforms.tex.value) {
+            const canvas = document.createElement('canvas')
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
+            const context = canvas.getContext('2d')
+            context.drawImage(this.#dataMaterial.uniforms.tex.value.image, 0, 0)
+            const d = context.getImageData(0, 0, canvas.width, canvas.height).data
+            console.log(d[100], d[900], d[400], d[168], d[2000])
+        }
 
 
 
