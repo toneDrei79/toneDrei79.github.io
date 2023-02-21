@@ -15,8 +15,6 @@ let constraints, availableDevices = {}
 init()
 animate()
 
-// debug
-
 
 async function init() {
     const container = document.createElement('div')
