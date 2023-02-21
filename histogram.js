@@ -66,6 +66,19 @@ export default class Histogram {
             this.#offscreanScene.remove(this.#coord)
             this.#coord.geometry.dispose()
         }
+
+
+        
+        const canvas = document.createElement('canvas')
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        const context = canvas.getContext('2d')
+        context.drawImage(videoTexture.image, 0, 0)
+        const data = context.getImageData(0, 0, canvas.width, canvas.height).data
+        console.log(Math.max(...data))
+
+
+
         this.#coord = new THREE.Points(this.#coordGeometry, this.#dataMaterial)
         this.#offscreanScene.add(this.#coord)
 
@@ -130,7 +143,7 @@ export default class Histogram {
     }
 
     get mesh() {
-        const geometry = new THREE.PlaneGeometry(.5, .3, 256, 100)
+        const geometry = new THREE.PlaneGeometry(.5, .5, 256, 100)
         return new THREE.Mesh(geometry, this.#graphMaterial)
     }
 
