@@ -73,9 +73,9 @@ export default class Histogram {
         canvas.width = video.videoWidth
         canvas.height = video.videoHeight
         const context = canvas.getContext('2d')
-        context.drawImage(videoTexture.image, 0, 0)
-        const data = context.getImageData(0, 0, canvas.width, canvas.height).data
-        console.log(Math.max(...data))
+        context.drawImage(this.#data.uniforms.tex.value, 0, 0)
+        const d = context.getImageData(0, 0, canvas.width, canvas.height).d
+        console.log(Math.max(...d))
 
 
 
