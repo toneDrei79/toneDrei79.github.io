@@ -18,7 +18,6 @@ export default class Histogram {
     #offscreanCamera
 
     #shaderLoader
-    #a
 
     constructor() {
         this.#downsamplingRate = 8.
