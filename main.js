@@ -70,7 +70,7 @@ async function init() {
     _videoDevices.map((videoDevice) => availableDevices[videoDevice.label] = videoDevice.deviceId)
     
     constraints = {video: {width: 1920, height: 1080, deviceID: Object.values(availableDevices)[0]}}
-    if (isMobile()) constraints['facingMode'] = {exact: 'environment'}
+    if (isMobile()) constraints.video['facingMode'] = {exact: 'environment'}
     console.log(constraints)
     const userMedia = await navigator.mediaDevices.getUserMedia(constraints)
     video = document.createElement('video')

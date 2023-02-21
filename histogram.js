@@ -68,8 +68,8 @@ export default class Histogram {
         }
         this.#coord = new THREE.Points(this.#coordGeometry, this.#dataMaterial)
         this.#offscreanScene.add(this.#coord)
-        console.log(this.#coordGeometry)
 
+        console.log(this.#data)
         renderer.setRenderTarget(this.#data)
         renderer.clear()
         for (let i=0; i<3; i++) {
