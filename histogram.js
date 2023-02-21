@@ -67,24 +67,9 @@ export default class Histogram {
             this.#offscreanScene.remove(this.#coord)
             this.#coord.geometry.dispose()
         }
-
-
-        if (this.#dataMaterial.uniforms.tex.value) {
-            const canvas = document.createElement('canvas')
-            canvas.width = video.videoWidth
-            canvas.height = video.videoHeight
-            const context = canvas.getContext('2d')
-            context.drawImage(this.#dataMaterial.uniforms.tex.value.image, 0, 0)
-            const d = context.getImageData(0, 0, canvas.width, canvas.height).data
-            console.log(d[100], d[900], d[400], d[168], d[2000])
-        }
-
-
-
         this.#coord = new THREE.Points(this.#coordGeometry, this.#dataMaterial)
         this.#offscreanScene.add(this.#coord)
 
-        console.log(this.#data)
         renderer.setRenderTarget(this.#data)
         renderer.clear()
         for (let i=0; i<3; i++) {
@@ -94,10 +79,6 @@ export default class Histogram {
             renderer.render(this.#offscreanScene, this.#offscreanCamera)
         }
         renderer.setRenderTarget(null)
-
-        let mem = new Float32Array(1*256*4)
-        renderer.readRenderTargetPixels(this.#data, 0, 0, 256, 1, mem)
-        console.log(Math.max(...mem))
     }
 
     #initData() {

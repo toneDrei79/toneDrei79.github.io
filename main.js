@@ -85,7 +85,7 @@ async function init() {
 }
 
 function render() {
-    histogram.compute(renderer, video)
+    histogram.compute(renderer)
 
     renderer.clear()
     renderer.render(scene, camera)
