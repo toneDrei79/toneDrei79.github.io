@@ -69,10 +69,9 @@ async function init() {
     const _videoDevices = _devices.filter((device) => device.kind == 'videoinput')
     _videoDevices.map((videoDevice) => availableDevices[videoDevice.label] = videoDevice.deviceId)
     
-    // const constraints = {video: {width: 1920, height: 1080, facingMode: 'user'}}
     constraints = {video: {width: 1920, height: 1080, deviceID: Object.values(availableDevices)[0]}}
+    if (isMobile()) constraints['facingMode'] = {exact: 'environment'}
     const userMedia = await navigator.mediaDevices.getUserMedia(constraints)
-
     video = document.createElement('video')
     video.autoplay = true
     video.muted = true
@@ -174,4 +173,9 @@ function onWindowResize() {
 
     renderer.setSize(width, height)
     render()
+}
+
+function isMobile() {
+    if (navigator.userAgent.match(/iPhone|iPad|Android.+Mobile/)) return true
+    return false
 }
