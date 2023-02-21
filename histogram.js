@@ -39,6 +39,9 @@ export default class Histogram {
         const width = video.videoWidth / this.#downsamplingRate
         const height = video.videoHeight / this.#downsamplingRate
 
+        console.log(width, height)
+        console.log(this.#data)
+
         const positions = []
         for (let j=0; j<height; j++) {
             for (let i=0; i<width; i++) {
@@ -81,7 +84,7 @@ export default class Histogram {
 
         let mem = new Float32Array(1*256*4)
         renderer.readRenderTargetPixels(this.#data, 0, 0, 256, 1, mem)
-        console.log(mem)
+        console.log(Math.max(...mem))
     }
 
     #initData() {
@@ -130,7 +133,9 @@ export default class Histogram {
 
     get mesh() {
         const geometry = new THREE.PlaneGeometry(.5, .3, 256, 100)
-        return new THREE.Mesh(geometry, this.#graphMaterial)
+        // return new THREE.Mesh(geometry, this.#graphMaterial)
+
+        return new THREE.Mesh(geometry, new THREE.MeshBasicMaterial())
     }
 
     get needsUpdate() {
