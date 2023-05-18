@@ -1,0 +1,793 @@
+<!-- 
+
+    Please use ctrl+f to search each exercises in this code. { exercise1 ~ exercise7 }
+
+    exercise2:
+        Please change the color of the walls by GUI-Walls.
+    exercise3:
+        Please change the properties of the lights by GUI-Lights.
+    exercise4:
+        Default light source is white point light. If it's changed, please reload page or control by GUI-Lights.
+        Then, change the properties of the cone, cylinder and sphere by GUI-Material,
+        GUI-Material inclueds the detail properties of each objects.
+    exercise6:
+        Please change the properties of the shadows by GUI-Shadows.
+    exercise7:
+        Please press VR button and see GUI reshaped for VR view.
+
+-->
+
+
+
+<!-- Licensed under a BSD license. See license.html for license -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Exercise02</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+        #c {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+</body>
+
+<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/",
+            "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.17/+esm"
+        }
+    }
+</script>
+
+<script type="module">
+
+    import * as THREE from 'three'
+    import {OrbitControls} from 'three/addons/controls/OrbitControls.js'
+    import {VRButton} from 'three/addons/webxr/VRButton.js'
+    import {HTMLMesh} from 'three/addons/interactive/HTMLMesh.js'
+    import {InteractiveGroup} from 'three/addons/interactive/InteractiveGroup.js'
+    import GUI from 'lil-gui'
+
+    
+    let camera, scene, renderer
+    const textureLoader = new THREE.TextureLoader()
+    const cubeTextureLoader = new THREE.CubeTextureLoader()
+    const constants = {
+        light: {
+            type: {directional: 'directional', point: 'point', spot: 'spot', hemisphere: 'hemisphere'}
+        },
+        material: {
+            side: {front: THREE.FrontSide, back: THREE.BackSide, double: THREE.DoubleSide},
+            combine: {multiply: THREE.MultiplyOperation, mix: THREE.MixOperation, add: THREE.AddOperation},
+            texture: {
+                env: loadCubeMap('textures/cube/SwedishRoyalCastle/'),
+                // env: loadCubeMap('textures/cube/grenouille/'),
+                map: loadMap('textures/brick_diffuse.jpg'),
+                alpha: loadMap('textures/alphaMap.jpg')
+            }
+        }
+    }
+    
+
+    init()
+    animate()
+
+
+    function init() {
+        const size = 2 // size of telelumen (do not set less than 2)
+
+
+        const canvas = document.querySelector('#c')
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, size*0.01, size*10)
+        camera.position.set(size/2, size/2, size*2)
+
+        scene = new THREE.Scene()
+        scene.background = new THREE.Color(0xaaaaaa)
+
+        renderer = new THREE.WebGLRenderer({canvas})
+        renderer.setPixelRatio(window.devicePixelRatio)
+        renderer.setSize(window.innerWidth, window.innerHeight)
+        renderer.shadowMap.enabled = true
+
+        const controls = new OrbitControls(camera, renderer.domElement)
+        controls.target = new THREE.Vector3(0, size/2, 0)
+        controls.update()
+
+        document.body.appendChild(VRButton.createButton(renderer))
+        renderer.xr.enabled = true
+        renderer.setAnimationLoop(function(time) {renderer.render(scene, camera)})
+
+
+        // exercise1
+
+        // environment lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
+        scene.add(ambientLight)
+
+        // grid
+        const grid = new THREE.GridHelper(size*10, 50, 0x000000, 0x000000)
+        grid.material.transparent = true
+        grid.material.opacity = 0.5
+        scene.add(grid)
+        
+        // floor
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(size*10, size*10),
+            // new THREE.MeshPhongMaterial({color: 0x777777})
+            new THREE.MeshStandardMaterial({color: 0x808080, roughness: 0.1})
+        )
+        floor.rotation.x = -Math.PI/2
+        scene.add(floor)
+
+        // teleumen lighting system
+        const telelumen = generateTelelumen(size)
+        scene.add(telelumen)
+
+        // table
+        const heightTable = size*0.25
+        const table = generateTable(size*0.5, heightTable)
+        scene.add(table)
+        
+        // cone
+        const heightCone = size * 0.3
+        const cone =  new THREE.Mesh(
+            new THREE.ConeGeometry(size*0.075, heightCone, 30),
+            new THREE.MeshPhongMaterial({color: 0x00ff00})
+        )
+        cone.position.set(-size*0.1, heightTable+heightCone/2, -size*0.1)
+        cone.castShadow = true
+        cone.receiveShadow = true
+        scene.add(cone)
+
+        // cylinder
+        const heightCylinder = size * 0.225
+        const cylinder = new THREE.Mesh(
+            new THREE.CylinderGeometry(size*0.05, size*0.05, heightCylinder, 30, 30),
+            new THREE.MeshLambertMaterial({color: 0xff0000})
+        )
+        cylinder.position.set(size*0.1, heightTable+heightCylinder/2, -size*0.1)
+        cylinder.castShadow = true
+        cylinder.receiveShadow = true
+        scene.add(cylinder)
+
+        // sphere
+        const radiusSphere = size * 0.075
+        const sphere =  new THREE.Mesh(
+            new THREE.SphereGeometry(radiusSphere, 30, 30),
+            new THREE.MeshPhysicalMaterial({color: 0x0000ff, roughness: 0.0, metalness: 0.2})
+        )
+        sphere.position.set(0, heightTable+radiusSphere, size*0.1)
+        sphere.castShadow = true
+        sphere.receiveShadow = true
+        scene.add(sphere)
+    
+
+        // exercise2
+        // GUI
+        const gui = new GUI()
+        guiWalls(gui, telelumen)
+        guiLight(gui, ambientLight, telelumen)
+        guiShadow(gui, telelumen, table, floor)
+        guiMaterial(gui, cone, cylinder, sphere)
+        
+
+        renderer.xr.addEventListener('sessionstart', () => {
+            // initVRsettings(size, grid, floor, telelumen, table, cone, cylinder, sphere, gui)
+        })
+        window.addEventListener('resize', onWindowResize)
+    }
+
+    function animate() {
+        requestAnimationFrame(animate)
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth/window.innerHeight
+        camera.updateProjectionMatrix()
+        renderer.setSize(window.innerWidth, window.innerHeight)
+    }
+
+    // exercise1
+    function generateTable(size=0.5, height=0.3) {
+        const table = new THREE.Group()
+        {   // board
+            const board = new THREE.Mesh(
+                new THREE.BoxGeometry(size, size*0.01, size),
+                // new THREE.MeshPhongMaterial({color: 0xffffff})
+                new THREE.MeshStandardMaterial({color: 0x808080, roughness: 0.1})
+            )
+            board.name = 'board'
+            board.position.y = height
+            board.castShadow = true
+            table.add(board)
+        }
+        {   // frames
+            const _frame = new THREE.Mesh(
+                new THREE.CylinderGeometry(size*0.02, size*0.02, height, 100, 100),
+                new THREE.MeshPhongMaterial({color: 0xffffff})
+            )
+            for (let i of [-1, 1]) {
+                for (let j of [-1, 1]) {
+                    const frame = _frame.clone()
+                    frame.position.set(i*(size*0.8)/2, height/2, j*(size*0.8)/2)
+                    frame.castShadow = true
+                    table.add(frame)
+                }
+            }
+        }
+        return table
+    }
+
+    // exercise1
+    function generateTelelumen(size=1.0) {
+        const telelumen = new THREE.Group()
+        const height = size*0.2
+        {   // ceiling lights
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7)
+            directionalLight.name = 'directional'
+            directionalLight.position.y = size*0.9
+            directionalLight.castShadow = true
+            directionalLight.visible = false
+            telelumen.add(directionalLight)
+
+            // point
+            const pointLight = new THREE.PointLight(0xffffff, 0.7)
+            pointLight.name = 'point'
+            pointLight.position.y = size*0.9
+            pointLight.castShadow = true
+            telelumen.add(pointLight)
+        
+            // spot
+            const spotLight = new THREE.SpotLight(0xffffff, 0.7)
+            spotLight.name = 'spot'
+            spotLight.position.y = size*0.9
+            spotLight.castShadow = true
+            spotLight.visible = false
+            telelumen.add(spotLight)
+            
+            // hemisphere
+            const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x5555aa, 0.7)
+            hemisphereLight.name = 'hemisphere'
+            hemisphereLight.position.y = size*0.9
+            hemisphereLight.visible = false
+            telelumen.add(hemisphereLight)
+        }
+        
+        // exercise5
+        {   // wall lights
+            const leftLight = new THREE.RectAreaLight(0xff0000, 0.6, size, size)
+            leftLight.name = 'leftLight'
+            leftLight.position.set(-size*0.5, size/2, 0)
+            leftLight.lookAt(0, size/2, 0)
+            telelumen.add(leftLight)
+
+            const rightLight = new THREE.RectAreaLight(0x00ff00, 0.6, size, size)
+            rightLight.name = 'rightLight'
+            rightLight.position.set(size*0.5, size/2, 0)
+            rightLight.lookAt(0, size/2, 0)
+            telelumen.add(rightLight)
+
+            const backLight = new THREE.RectAreaLight(0xffffff, 0.6, size, size)
+            backLight.name = 'backLight'
+            backLight.position.set(0, size/2, -size*0.5)
+            backLight.lookAt(0, size/2, 0)
+            telelumen.add(backLight)
+        }
+        {   // ceiling
+            const ceiling = new THREE.Group()
+            {
+                const top = new THREE.Mesh(
+                    new THREE.PlaneGeometry(size, size),
+                    new THREE.MeshPhongMaterial({color: 0xffffff})
+                )
+                top.position.z = 0.001
+                top.castShadow = true
+                ceiling.add(top)
+
+                const bottom = new THREE.Mesh(
+                    new THREE.PlaneGeometry(size, size),
+                    new THREE.MeshPhongMaterial({color: 0xffffff})
+                )
+                bottom.rotation.x = Math.PI
+                ceiling.add(bottom)
+            }
+            ceiling.position.y = size
+            ceiling.rotation.x = -Math.PI/2
+            telelumen.add(ceiling)
+        }
+        {   // walls
+            const _wall = new THREE.Group()
+            {
+                const _wall_out = new THREE.Mesh(
+                    new THREE.PlaneGeometry(size, size),
+                    new THREE.MeshPhongMaterial({color: 0xbbff99})
+                )
+                _wall_out.position.z = -size*0.001
+                _wall_out.rotation.y = Math.PI
+                _wall_out.castShadow = true
+                _wall.add(_wall_out)
+
+                const _wall_in = new THREE.Mesh(
+                    new THREE.PlaneGeometry(size, size),
+                    new THREE.MeshPhongMaterial({color: 0xffffff})
+                )
+                _wall_in.position.z = size*0.001
+                _wall_in.castShadow = true
+                _wall.add(_wall_in)
+            }
+
+            const left = _wall.clone()
+            left.name = 'leftWall'
+            left.children[1].material = new THREE.MeshPhongMaterial({color: 0xff0000})
+            left.position.set(-size/2, size/2, 0)
+            left.rotation.y = Math.PI/2
+            telelumen.add(left)
+
+            const right = _wall.clone()
+            right.name = 'rightWall'
+            right.children[1].material = new THREE.MeshPhongMaterial({color: 0x00ff00})
+            right.position.set(size/2, size/2, 0)
+            right.rotation.y = -Math.PI/2
+            telelumen.add(right)
+
+            const back = _wall.clone()
+            back.name = 'backWall'
+            back.children[1].material = new THREE.MeshPhongMaterial({color: 0xffffff})
+            back.position.set(0, size/2, -size/2)
+            telelumen.add(back)
+
+            const front = _wall.clone()
+            front.name = 'frontWall'
+            front.children[1].material = new THREE.MeshPhongMaterial({color: 0xffffff})
+            front.scale.y = height/size
+            front.position.set(0, size-height/2, size/2)
+            front.rotation.y = Math.PI
+            telelumen.add(front)
+        }
+        {   // frames
+            const _frame = new THREE.Group()
+            const _sizeFrame = size * 0.05
+            const _sizeCore = _sizeFrame * 0.5
+            const _sizeEdge = _sizeCore * 0.25
+            const _sizeSurface = _sizeCore * 0.55
+            {
+                const core = new THREE.Mesh(
+                    new THREE.BoxGeometry(_sizeCore, size, _sizeCore),
+                    // new THREE.MeshPhongMaterial({color: 0xcccccc})
+                    new THREE.MeshStandardMaterial({color: 0xcccccc, roughness: 0.5})
+                )
+                core.castShadow = true
+                _frame.add(core)
+
+                for (let i of [-1, 1]) {
+                    for (let j of [-1, 1]) {
+                        const edge = new THREE.Mesh(
+                            new THREE.BoxGeometry(_sizeEdge, size, _sizeEdge),
+                            // new THREE.MeshPhongMaterial({color: 0xcccccc})
+                            new THREE.MeshStandardMaterial({color: 0xcccccc, roughness: 0.5})
+                        )
+                        edge.position.set(i*_sizeCore/2, 0, j*_sizeCore/2)
+                        edge.castShadow = true
+                        _frame.add(edge)
+                    }
+                }
+                
+                for (let i of [-Math.PI, -Math.PI/2, 0, Math.PI/2]) {
+                    const surface = new THREE.Mesh(
+                        new THREE.BoxGeometry(_sizeSurface, size, _sizeSurface),
+                        // new THREE.MeshPhongMaterial({color: 0xcccccc})
+                        new THREE.MeshStandardMaterial({color: 0xcccccc, roughness: 0.5})
+                    )
+                    surface.position.set(Math.cos(i)*_sizeCore/2*0.7, 0, Math.sin(i)*_sizeCore/2*0.7)
+                    surface.castShadow = true
+                    _frame.add(surface)
+                }
+            }
+
+            // vartical frames
+            for (let i of [-1, 1]) {
+                for (let j of [-1, 1]) {
+                    const vartical = _frame.clone()
+                    vartical.scale.set(1, 1+(_sizeCore+_sizeEdge)/size/2, 1)
+                    vartical.position.set(i*size/2, size/2+(_sizeCore+_sizeEdge)/4, j*size/2)
+                    telelumen.add(vartical)
+                }
+            }
+
+            // horizontal frames
+            for (let i of [-Math.PI, -Math.PI/2, 0, Math.PI/2]) {
+                const horizontal = _frame.clone()
+                horizontal.scale.set(1, 1-(_sizeCore+_sizeEdge)/size, 1)
+                horizontal.rotation.set(Math.cos(i)*Math.PI/2, 0, Math.sin(i)*Math.PI/2)
+
+                const top = horizontal.clone()
+                top.position.set(Math.cos(i)*size/2, size, Math.sin(i)*size/2)
+                telelumen.add(top)
+                const bottom = horizontal.clone()
+                bottom.position.set(Math.cos(i)*size/2, size-height, Math.sin(i)*size/2)
+                telelumen.add(bottom)
+            }
+
+            // ceiling frames
+            for (let i of [-1, 1]) {
+                const large = _frame.clone()
+                large.scale.set(1, 1-(_sizeCore+_sizeEdge)/size, 0.5)
+                large.position.set(0, size-(_sizeCore+_sizeEdge)/4, i*size*0.165)
+                large.rotation.set(Math.PI/2, 0, Math.PI/2)
+                telelumen.add(large)
+            }
+            for (let i of [-Math.PI, -Math.PI/2, 0, Math.PI/2]) {
+                const small = _frame.clone()
+                small.scale.set(1, 0.333, 0.5)
+                small.position.set(Math.cos(i)*size/2*0.66, size-(_sizeCore+_sizeEdge)/4, Math.sin(i)*size/2*0.66)
+                small.rotation.set(Math.PI/2, 0, 0)
+                telelumen.add(small)
+            }
+        }
+        {   // ceiling light case
+            const lightCase = new THREE.Group()
+            const _size = size*0.15
+            const _height = size*0.05
+            {
+                const unit = new THREE.Mesh(
+                    new THREE.CylinderGeometry(_size/2, _size, _height, 4, 4),
+                    new THREE.MeshLambertMaterial({color: 0x999999})
+                )
+                unit.rotation.y = Math.PI/4
+                lightCase.add(unit)
+
+                const cover = new THREE.Mesh(
+                    new THREE.PlaneGeometry(_size*1.2, _size*1.2),
+                    new THREE.MeshPhongMaterial({color: 0xffffff})
+                )
+                cover.position.y = -_height/2-0.001
+                cover.rotation.x = Math.PI/2
+                lightCase.add(cover)
+            }
+            lightCase.position.y = size-_height/2
+            telelumen.add(lightCase)
+        }
+        return telelumen
+    }
+
+    // exercise2
+    function guiWalls(gui, telelumen) {
+        const configs = {
+            color: {
+                left: 0xff0000,
+                right: 0x00ff00,
+                back: 0xffffff,
+                front: 0xffffff
+            }
+        }
+
+        const folder = gui.addFolder('Walls')
+        folder.addColor(configs.color, 'left').name('leftWall').onChange(updatePropaties())
+        folder.addColor(configs.color, 'right').name('rightWall').onChange(updatePropaties())
+        folder.addColor(configs.color, 'back').name('backWall').onChange(updatePropaties())
+        folder.addColor(configs.color, 'front').name('frontWall').onChange(updatePropaties())
+        folder.close()
+
+        function updatePropaties() {
+            return function(value) {
+                const wall = telelumen.getObjectByName('leftWall').children[1]
+                const mat = wall.material.clone()
+                mat.color.set(new THREE.Color(value))
+                wall.material = mat
+
+                const light = telelumen.getObjectByName('leftLight')
+                light.color = new THREE.Color(value)
+            }
+        }
+    }
+
+    // exercise3
+    function guiLight(gui, ambientLight, telelumen) {
+        const directional = telelumen.getObjectByName('directional')
+        const point = telelumen.getObjectByName('point')
+        const spot = telelumen.getObjectByName('spot')
+        const hemisphere = telelumen.getObjectByName('hemisphere')
+        
+        const configs = {
+            type: constants.light.type.point,
+            color: point.color,
+            intensity: 0.7
+        }
+
+        const folder = gui.addFolder('Light')
+        folder.add(ambientLight, 'visible').name('environment light')
+
+        folder.add(configs, 'type', constants.light.type).name('type').onChange(value => {
+            for (let light of [directional, point, spot, hemisphere]) {
+                if (light.name == value) {
+                    light.visible = true
+                }
+                else {
+                    light.visible = false
+                }
+            }
+            detailFolder.destroy()
+            detailFolder = guiDetail(value, folder, directional, point, spot, hemisphere)
+            detailFolder.close()
+        })
+        folder.addColor(configs, 'color').name('color').onChange(value => {
+            for (let light of [directional, point, spot, hemisphere]) {
+                light.color = new THREE.Color(value)
+            }
+        })
+        folder.add(configs, 'intensity', 0.0, 1.0).name('intensity').onChange(value => {
+            for (let light of [directional, point, spot, hemisphere]) {
+                light.intensity = value
+            }
+        })
+
+        let detailFolder = guiDetail(configs.type, folder, directional, point, spot, hemisphere)
+
+        folder.close()
+        detailFolder.close()
+    }
+
+    // exercise3
+    function guiDetail(type, parent, directional, point, spot, hemisphere) {
+        const detailFolder = parent.addFolder('Detail')
+        switch (type) {
+        case constants.light.type.directional:
+            break
+        case constants.light.type.point:
+            detailFolder.add(point, 'distance', 0.0, 10.0).name('distance')
+            detailFolder.add(point, 'decay', 0.0, 10.0).name('decay')
+            break
+        case constants.light.type.spot:
+            detailFolder.add(spot, 'distance', 0.0, 10.0).name('distance')
+            detailFolder.add(spot, 'angle', 0.0, Math.PI/2).name('angle')
+            detailFolder.add(spot, 'penumbra', 0.0, 1.0).name('penumbra')
+            detailFolder.add(spot, 'decay', 0.0, 10.0).name('decay')
+            break
+        case constants.light.type.hemisphere:
+            detailFolder.addColor(hemisphere, 'groundColor').name('ground color')
+            break
+        default:
+        }
+        return detailFolder
+    }
+    
+    // exercise6
+    function guiShadow(gui, telelumen, table, floor) {
+        const directional = telelumen.getObjectByName('directional')
+        const point = telelumen.getObjectByName('point')
+        const spot = telelumen.getObjectByName('spot')
+        // const hemisphere = telelumen.getObjectByName('hemisphere')
+
+        const configs = {
+            enable: false,
+            mapSize: 512
+        }
+
+        const folder = gui.addFolder('Shadow')
+        folder.add(configs, 'enable').name('enable').onChange(updateMaterial([table.getObjectByName('board'), floor], 'receiveShadow'))
+        folder.add(configs, 'mapSize', 128, 1024).step(128).name('map size').onChange(value => {
+            for (let light of [directional, point, spot]) {
+                light.shadow.map = null
+                light.shadow.mapSize.width = value
+                light.shadow.mapSize.height = value
+            }
+        })
+        folder.close()
+    }
+
+    // exercise4
+    function guiMaterial(gui, cone, cylinder, sphere) {
+        const envKeys = getObjectsKeys(constants.material.texture.env)
+        const mapKeys = getObjectsKeys(constants.material.texture.map)
+        const alphaKeys = getObjectsKeys(constants.material.texture.alpha)
+
+        const configs = {
+            transparent: false,
+            opacity: 1.0,
+            depthTest: true,
+            depthWrite: true,
+            alphaTest: 0.0,
+            visible: true,
+            side: THREE.FrontSide,
+
+            emissive: 0x000000,
+            flatShading: false,
+            wireframe: false,
+            vertexColors: false,
+            fog: false,
+            reflectivity: 1.0,
+
+            env: envKeys[0],
+            map: mapKeys[0],
+            alpha: alphaKeys[0]
+        }
+
+        const objects = [cone, cylinder, sphere]
+        const materials = [cone.material, cylinder.material, sphere.material]
+
+        const folder = gui.addFolder('Material')
+        folder.add(configs, 'transparent').name('transparent').onChange(updateMaterial(objects, 'transparent'))
+        folder.add(configs, 'opacity', 0.0, 1.0).name('opacity').onChange(updateMaterial(objects, 'opacity'))
+        folder.add(configs, 'depthTest').name('depth test').onChange(updateMaterial(objects, 'depthTest'))
+        folder.add(configs, 'depthWrite').name('depth write').onChange(updateMaterial(objects, 'depthWrite'))
+        folder.add(configs, 'alphaTest', 0.0, 1.0).name('alpha test').onChange(updateMaterial(objects, 'alphaTest'))
+        folder.add(configs, 'visible').name('visible').onChange(updateMaterial(objects, 'visible'))
+        folder.add(configs, 'side', constants.material.side).name('side').onChange(updateMaterial(objects, 'side'))
+        folder.addColor(configs, 'emissive').name('emissive').onChange(updateMaterial(objects, 'emissive'))
+        folder.add(configs, 'flatShading').name('flat shading').onChange(updateMaterial(objects, 'flatShading'))
+        folder.add(configs, 'wireframe').name('wireframe').onChange(updateMaterial(objects, 'wireframe'))
+        folder.add(configs, 'vertexColors').name('vertex colors').onChange(updateMaterial(objects, 'vertexColors'))
+        folder.add(configs, 'fog').name('fog').onChange(updateMaterial(objects, 'fog'))
+        folder.add(configs, 'reflectivity', 0.0, 1.0).name('reflectivity').onChange(updateMaterial(objects, 'reflectivity'))
+        folder.add(configs, 'env', envKeys).name('env map').onChange(updateTexture(materials, 'envMap', constants.material.texture.env))
+        folder.add(configs, 'map', mapKeys).name('map').onChange(updateTexture(materials, 'map', constants.material.texture.map))
+        folder.add(configs, 'alpha', alphaKeys).name('alpha map').onChange(updateTexture(materials, 'alphaMap', constants.material.texture.alpha))
+
+        guiPhong(folder, cone)
+        guiLambert(folder, cylinder)
+        guiPhysical(folder, sphere)
+
+        folder.close()
+    }
+
+    // exercise4
+    function guiPhong(parent, cone) {
+        const folder = parent.addFolder('Cone')
+        folder.addColor(cone.material, 'specular').name('specular')
+        folder.add(cone.material, 'shininess', 0, 100).name('shininess')
+        folder.add(cone.material, 'refractionRatio', 0.0, 1.0).name('refraction ratio')
+        folder.add(cone.material, 'combine', constants.material.combine).name('combine').onChange(updateMaterial([cone]))
+
+        folder.close()
+    }
+
+    // exercise4
+    function guiLambert(parent, cylinder) {
+        const folder = parent.addFolder('Cylinder')
+        folder.add(cylinder.material, 'refractionRatio', 0.0 ,1.0).name('refraction ratio')
+        folder.add(cylinder.material, 'combine', constants.material.combine).name('combine').onChange(updateMaterial([cylinder]))
+
+        folder.close()
+    }
+
+    // exercise4
+    function guiPhysical(parent, sphere) {
+        const folder = parent.addFolder('Sphere')
+        folder.add(sphere.material, 'roughness', 0.0, 1.0).name('roughness')
+        folder.add(sphere.material, 'metalness', 0.0, 1.0).name('metalness')
+        folder.add(sphere.material, 'clearcoat', 0.0, 1.0).name('clearcoat')
+        folder.add(sphere.material, 'clearcoatRoughness', 0.0, 1.0).name('clearcoat roughness')
+
+        folder.close()
+    }
+
+    function updateMaterial(objects, key=null) {
+        return function (value) {
+            for (let obj of objects) {
+                if (key == 'receiveShadow') {
+                    obj[key] = value
+                }
+                else if (key == 'emissive') {
+                    obj.material[key] = new THREE.Color(value)
+                }
+                else if (key != null) {
+                    obj.material[key] = value
+                }
+                obj.material.needsUpdate = true
+                obj.geometry.attributes.position.needsUpdate = true
+                obj.geometry.attributes.normal.needsUpdate = true
+            }
+        }
+    }
+
+    function updateTexture(materials, materialKey, textures) {
+        return function (key) {
+            for (let material of materials) {
+                material[materialKey] = textures[key]
+                material.needsUpdate = true
+            }
+        }
+    }
+
+    function loadMap(path) {
+        const texture = textureLoader.load(path)
+        texture.wrapS = THREE.RepeatWrapping
+        texture.wrapT = THREE.RepeatWrapping
+        texture.repeat.set( 9, 1 )
+        return {none: null, texture: texture}
+    }
+
+    function loadCubeMap(path) {
+        const format = '.jpg'
+        const fullpaths = [
+            path + 'px' + format, path + 'nx' + format,
+            path + 'py' + format, path + 'ny' + format,
+            path + 'pz' + format, path + 'nz' + format
+        ]
+        const reflectionCube = cubeTextureLoader.load(fullpaths)
+        const refractionCube = cubeTextureLoader.load(fullpaths)
+        refractionCube.mapping = THREE.CubeRefractionMapping
+        return {none: null, reflection: reflectionCube, refraction: refractionCube}
+    }
+
+    function getObjectsKeys(obj) {
+        const keys = []
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                keys.push(key)
+            }
+        }
+        return keys
+    }
+
+    // exercise7
+    function initVRsettings(size, grid, floor, telelumen, table, cone, cylinder, sphere, gui) {
+        grid.position.z -= size*1.5
+        floor.position.z -= size*1.5
+        telelumen.position.z -= size*1.5
+        table.position.z -= size*1.5
+        cone.position.z -= size*1.5
+        cylinder.position.z -= size*1.5
+        sphere.position.z -= size*1.5
+
+        const directional = telelumen.getObjectByName('directional')
+        const spot = telelumen.getObjectByName('spot')
+        spot.target.position.set(0, 0, -size*1.5)
+        directional.position.set(0, 0, -size*1.5)
+        // necessary to change direction
+        const directionalHelper = new THREE.DirectionalLightHelper(directional)
+        const spotHelper = new THREE.SpotLightHelper(spot)
+
+
+        // GUI
+        gui.domElement.style.visibility = 'hidden'
+        const group1 = new InteractiveGroup(renderer, camera)
+        scene.add(group1)
+
+        // gui.foldersRecursive()[3].destroy()
+        for (let folder of gui.foldersRecursive()) {
+            folder.open()
+        }
+        const mesh1 = new HTMLMesh(gui.domElement)
+        mesh1.position.set(-size/2, size/2, -size*0.8)
+        mesh1.rotation.y = Math.PI/4
+        mesh1.scale.setScalar(size)
+        group1.add(mesh1)
+
+        const gui2 = new GUI()
+        guiMaterial(gui2, cone, cylinder, sphere)
+        gui2.domElement.style.visibility = 'hidden'
+        const group2 = new InteractiveGroup(renderer, camera)
+        scene.add(group2)
+
+        for (let folder of gui2.foldersRecursive()) {
+            folder.open()
+        }
+        const mesh2 = new HTMLMesh(gui2.domElement)
+        mesh2.position.set(size/2, size/2, -size*0.8)
+        mesh2.rotation.y = -Math.PI/4
+        mesh2.scale.setScalar(size)
+        group2.add(mesh2)
+    }
+
+</script>
+
+</html>
